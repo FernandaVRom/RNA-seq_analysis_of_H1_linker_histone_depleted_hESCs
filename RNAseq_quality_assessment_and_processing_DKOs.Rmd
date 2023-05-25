@@ -298,7 +298,7 @@ sig1 and sig2 values are even stricter.
 tt1 <- topTable(fit, coef="dk0_1vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -307,7 +307,7 @@ tt1 <- topTable(fit, coef="dk0_1vsWT", adjust.method="fdr", n=Inf) %>%
 tt2 <- topTable(fit, coef="dk0_2vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -316,7 +316,7 @@ tt2 <- topTable(fit, coef="dk0_2vsWT", adjust.method="fdr", n=Inf) %>%
 tt3 <- topTable(fit, coef="dk0_3vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -325,7 +325,7 @@ tt3 <- topTable(fit, coef="dk0_3vsWT", adjust.method="fdr", n=Inf) %>%
 tt4 <- topTable(fit, coef="dk0_4vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -334,7 +334,7 @@ tt4 <- topTable(fit, coef="dk0_4vsWT", adjust.method="fdr", n=Inf) %>%
 tt5 <- topTable(fit, coef="dk0_5vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -344,7 +344,7 @@ tt5 <- topTable(fit, coef="dk0_5vsWT", adjust.method="fdr", n=Inf) %>%
 tt6 <- topTable(fit, coef="dk1_4vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -353,7 +353,7 @@ tt6 <- topTable(fit, coef="dk1_4vsWT", adjust.method="fdr", n=Inf) %>%
 tt7 <- topTable(fit, coef="dk1_5vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -363,7 +363,7 @@ tt7 <- topTable(fit, coef="dk1_5vsWT", adjust.method="fdr", n=Inf) %>%
 tt8 <- topTable(fit, coef="dk2_4vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -372,7 +372,7 @@ tt8 <- topTable(fit, coef="dk2_4vsWT", adjust.method="fdr", n=Inf) %>%
 tt9 <- topTable(fit, coef="dk3_4vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -381,7 +381,7 @@ tt9 <- topTable(fit, coef="dk3_4vsWT", adjust.method="fdr", n=Inf) %>%
 tt10 <- topTable(fit, coef="dk3_5vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -390,7 +390,7 @@ tt10 <- topTable(fit, coef="dk3_5vsWT", adjust.method="fdr", n=Inf) %>%
 tt11 <- topTable(fit, coef="dk4_5vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -399,7 +399,7 @@ tt11 <- topTable(fit, coef="dk4_5vsWT", adjust.method="fdr", n=Inf) %>%
 tt12 <- topTable(fit, coef="dkX_0vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -409,7 +409,7 @@ tt12 <- topTable(fit, coef="dkX_0vsWT", adjust.method="fdr", n=Inf) %>%
 tt13 <- topTable(fit, coef="dkX_2vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -418,7 +418,7 @@ tt13 <- topTable(fit, coef="dkX_2vsWT", adjust.method="fdr", n=Inf) %>%
 tt14 <- topTable(fit, coef="dkX_3vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -427,7 +427,7 @@ tt14 <- topTable(fit, coef="dkX_3vsWT", adjust.method="fdr", n=Inf) %>%
 tt15 <- topTable(fit, coef="dkX_4vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -436,7 +436,7 @@ tt15 <- topTable(fit, coef="dkX_4vsWT", adjust.method="fdr", n=Inf) %>%
 tt16 <- topTable(fit, coef="dkX_5vsWT", adjust.method="fdr", n=Inf) %>% 
   rownames_to_column("ID") %>% 
   arrange(P.Value) %>% 
-  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(1.5) & adj.P.Val < 0.05 ),
          sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
          sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
   dplyr::select(ID, ENSGID, SYMBOL,  
@@ -627,84 +627,84 @@ mywrite <- function(...){
   write.table(..., row.names=F, col.names=F, quote=F)
 }
 
-tt %>% dplyr::filter(dk0_1vsWT_sig1==1) %>% arrange(dk0_1vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_1vsWT_sig0==1) %>% arrange(dk0_1vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_1vsWT_up.csv")
-tt %>% dplyr::filter(dk0_1vsWT_sig1==-1) %>% arrange(dk0_1vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_1vsWT_sig0==-1) %>% arrange(dk0_1vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_1vsWT_down.csv")
 
-tt %>% dplyr::filter(dk0_2vsWT_sig1==1) %>% arrange(dk0_2vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_2vsWT_sig0==1) %>% arrange(dk0_2vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_2vsWT_up.csv")
-tt %>% dplyr::filter(dk0_2vsWT_sig1==-1) %>% arrange(dk0_2vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_2vsWT_sig0==-1) %>% arrange(dk0_2vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_2vsWT_down.csv")
 
-tt %>% dplyr::filter(dk0_3vsWT_sig1==1) %>% arrange(dk0_3vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_3vsWT_sig0==1) %>% arrange(dk0_3vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_3vsWT_up.csv")
-tt %>% dplyr::filter(dk0_3vsWT_sig1==-1) %>% arrange(dk0_3vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_3vsWT_sig0==-1) %>% arrange(dk0_3vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_3vsWT_down.csv")
 
-tt %>% dplyr::filter(dk0_4vsWT_sig1==1) %>% arrange(dk0_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_4vsWT_sig0==1) %>% arrange(dk0_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_4vsWT_up.csv")
-tt %>% dplyr::filter(dk0_4vsWT_sig1==-1) %>% arrange(dk0_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_4vsWT_sig0==-1) %>% arrange(dk0_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_4vsWT_down.csv")
 
-tt %>% dplyr::filter(dk0_5vsWT_sig1==1) %>% arrange(dk0_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_5vsWT_sig0==1) %>% arrange(dk0_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_5vsWT_up.csv")
-tt %>% dplyr::filter(dk0_5vsWT_sig1==-1) %>% arrange(dk0_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk0_5vsWT_sig0==-1) %>% arrange(dk0_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk0_5vsWT_down.csv")
 
-tt %>% dplyr::filter(dk1_4vsWT_sig1==1) %>% arrange(dk1_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk1_4vsWT_sig0==1) %>% arrange(dk1_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk1_4vsWT_up.csv")
-tt %>% dplyr::filter(dk1_4vsWT_sig1==-1) %>% arrange(dk1_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk1_4vsWT_sig0==-1) %>% arrange(dk1_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk1_4vsWT_down.csv")
 
-tt %>% dplyr::filter(dk1_5vsWT_sig1==1) %>% arrange(dk1_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk1_5vsWT_sig0==1) %>% arrange(dk1_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk1_5vsWT_up.csv")
-tt %>% dplyr::filter(dk1_5vsWT_sig1==-1) %>% arrange(dk1_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk1_5vsWT_sig0==-1) %>% arrange(dk1_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk1_5vsWT_down.csv")
 
-tt %>% dplyr::filter(dk2_4vsWT_sig1==1) %>% arrange(dk2_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk2_4vsWT_sig0==1) %>% arrange(dk2_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk2_4vsWT_up.csv")
-tt %>% dplyr::filter(dk2_4vsWT_sig1==-1) %>% arrange(dk2_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk2_4vsWT_sig0==-1) %>% arrange(dk2_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk2_4vsWT_down.csv")
 
-tt %>% dplyr::filter(dk3_4vsWT_sig1==1) %>% arrange(dk3_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk3_4vsWT_sig0==1) %>% arrange(dk3_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk3_4vsWT_up.csv")
-tt %>% dplyr::filter(dk3_4vsWT_sig1==-1) %>% arrange(dk3_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk3_4vsWT_sig0==-1) %>% arrange(dk3_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk3_4vsWT_down.csv")
 
-tt %>% dplyr::filter(dk3_5vsWT_sig1==1) %>% arrange(dk3_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk3_5vsWT_sig0==1) %>% arrange(dk3_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk3_5vsWT_up.csv")
-tt %>% dplyr::filter(dk3_5vsWT_sig1==-1) %>% arrange(dk3_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk3_5vsWT_sig0==-1) %>% arrange(dk3_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk3_5vsWT_down.csv")
 
-tt %>% dplyr::filter(dk4_5vsWT_sig1==1) %>% arrange(dk4_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk4_5vsWT_sig0==1) %>% arrange(dk4_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk4_5vsWT_up.csv")
-tt %>% dplyr::filter(dk4_5vsWT_sig1==-1) %>% arrange(dk4_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dk4_5vsWT_sig0==-1) %>% arrange(dk4_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dk4_5vsWT_down.csv")
 
-tt %>% dplyr::filter(dkX_0vsWT_sig1==1) %>% arrange(dkX_0vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_0vsWT_sig0==1) %>% arrange(dkX_0vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_0vsWT_up.csv")
-tt %>% dplyr::filter(dkX_0vsWT_sig1==-1) %>% arrange(dkX_0vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_0vsWT_sig0==-1) %>% arrange(dkX_0vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_0vsWT_down.csv")
 
-tt %>% dplyr::filter(dkX_2vsWT_sig1==1) %>% arrange(dkX_2vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_2vsWT_sig0==1) %>% arrange(dkX_2vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_2vsWT_up.csv")
-tt %>% dplyr::filter(dkX_2vsWT_sig1==-1) %>% arrange(dkX_2vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_2vsWT_sig0==-1) %>% arrange(dkX_2vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_2vsWT_down.csv")
 
-tt %>% dplyr::filter(dkX_3vsWT_sig1==1) %>% arrange(dkX_3vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_3vsWT_sig0==1) %>% arrange(dkX_3vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_3vsWT_up.csv")
-tt %>% dplyr::filter(dkX_3vsWT_sig1==-1) %>% arrange(dkX_3vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_3vsWT_sig0==-1) %>% arrange(dkX_3vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_3vsWT_down.csv")
 
-tt %>% dplyr::filter(dkX_4vsWT_sig1==1) %>% arrange(dkX_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_4vsWT_sig0==1) %>% arrange(dkX_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_4vsWT_up.csv")
-tt %>% dplyr::filter(dkX_4vsWT_sig1==-1) %>% arrange(dkX_4vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_4vsWT_sig0==-1) %>% arrange(dkX_4vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_4vsWT_down.csv")
 
-tt %>% dplyr::filter(dkX_5vsWT_sig1==1) %>% arrange(dkX_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_5vsWT_sig0==1) %>% arrange(dkX_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_5vsWT_up.csv")
-tt %>% dplyr::filter(dkX_5vsWT_sig1==-1) %>% arrange(dkX_5vsWT_LFC) %>% 
+tt %>% dplyr::filter(dkX_5vsWT_sig0==-1) %>% arrange(dkX_5vsWT_LFC) %>% 
   pull(ID) %>% mywrite(file="./Results/siglist_dkX_5vsWT_down.csv")
 ```
 
