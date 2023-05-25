@@ -404,39 +404,39 @@ mywrite <- function(...){
   write.table(..., row.names=F, col.names=F, quote=F)
 }
 
-tt %>% dplyr::filter(H1.0vWT_sig==1) %>% arrange(H1.0vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.0vWT_sig0==1) %>% arrange(H1.0vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.0vWT_up.txt")
-tt %>% dplyr::filter(H1.0vWT_sig==-1) %>% arrange(H1.0vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.0vWT_sig0==-1) %>% arrange(H1.0vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.0vWT_down.txt")
 
-tt %>% dplyr::filter(H1.1vWT_sig==1) %>% arrange(H1.1vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.1vWT_sig0==1) %>% arrange(H1.1vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.1vWT_up.txt")
-tt %>% dplyr::filter(H1.1vWT_sig==-1) %>% arrange(H1.1vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.1vWT_sig0==-1) %>% arrange(H1.1vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.1vWT_down.txt")
 
-tt %>% dplyr::filter(H1.2vWT_sig==1) %>% arrange(H1.2vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.2vWT_sig0==1) %>% arrange(H1.2vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.2vWT_up.txt")
-tt %>% dplyr::filter(H1.2vWT_sig==-1) %>% arrange(H1.2vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.2vWT_sig0==-1) %>% arrange(H1.2vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.2vWT_down.txt")
 
-tt %>% dplyr::filter(H1.3vWT_sig==1) %>% arrange(H1.3vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.3vWT_sig0==1) %>% arrange(H1.3vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.3vWT_up.txt")
-tt %>% dplyr::filter(H1.3vWT_sig==-1) %>% arrange(H1.3vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.3vWT_sig0==-1) %>% arrange(H1.3vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.3vWT_down.txt")
 
-tt %>% dplyr::filter(H1.4vWT_sig==1) %>% arrange(H1.4vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.4vWT_sig0==1) %>% arrange(H1.4vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.4vWT_up.txt")
-tt %>% dplyr::filter(H1.4vWT_sig==-1) %>% arrange(H1.4vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.4vWT_sig0==-1) %>% arrange(H1.4vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.4vWT_down.txt")
 
-tt %>% dplyr::filter(H1.5vWT_sig==1) %>% arrange(H1.5vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.5vWT_sig0==1) %>% arrange(H1.5vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.5vWT_up.txt")
-tt %>% dplyr::filter(H1.5vWT_sig==-1) %>% arrange(H1.5vWT_LFC) %>% 
+tt %>% dplyr::filter(H1.5vWT_sig0==-1) %>% arrange(H1.5vWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.5vWT_down.txt")
 
-tt %>% dplyr::filter(H1.XvWT_sig==1) %>% arrange(H1.XvWT_LFC) %>% 
+tt %>% dplyr::filter(H1.XvWT_sig0==1) %>% arrange(H1.XvWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.XvWT_up.txt")
-tt %>% dplyr::filter(H1.XvWT_sig==-1) %>% arrange(H1.XvWT_LFC) %>% 
+tt %>% dplyr::filter(H1.XvWT_sig0==-1) %>% arrange(H1.XvWT_LFC) %>% 
   pull(ENSGID) %>% mywrite(file="./Results/siglist_H1.XvWT_down.txt")
 ```
 
