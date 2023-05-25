@@ -5,10 +5,10 @@ This repository contains the code used to perform a comparative gene expression 
 
 I. ABOUT THE PIPELINES
 
-The repository is divided into 1 Rmd file and 3 R scripts. Each pipeline serves a specific purpose, as described below:
+The repository is divided into 2 Rmd file and 3 R scripts. Each pipeline serves a specific purpose, as described below:
 
 
-1. RNA-seq_quality_assessment_and_processing.Rmd
+1. RNA-seq_quality_assessment_and_processing.Rmd (for either SKO or DKO analysis)
 
 Previously, RNAseq read quality was assessed using FASTQC quality control tool. The reads were mapped to human GRCh38.p13 primary assembly using STAR (version 2.6.1). 
 
