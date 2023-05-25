@@ -1,0 +1,772 @@
+---
+title: "RNAseq_quality_assessment_and_processing_DKOs"
+author: "Mukhtar Sadykov"
+date: "12/1/2021"
+---
+
+# H1 KOs in human embryonic cells
+
+## General overview
+
+RNAseq read quality was assessed using FASTQC quality control tool [ref]. The reads were mapped to human GRCh38.p13 primary assembly using STAR (version 2.6.1) [ref]. Subsequently, gene counts were derived from the number of uniquely aligned unambiguous reads by Subread:featureCount (version v2.0.2) [ref] and library sizes were scale-normalized by the trimmed mean of M values (TMM) method using EdgeR software[ref]. The R package limma[ref] with the voomWithQualityWeights function [ref] was utilized to calculate the weighted likelihoods for all samples, based on the observed mean–variance relationship of every gene and sample. Genes with fold change greater than two and false discovery rate corrected p-value (Benjamini-Hochberg procedure) < 0.05 were considered to be differentially expressed.
+
+## Preprocessing of a count table
+
+Clean the environment, install the libraries and set working directory.
+```{r}
+rm(list=ls())
+pacman::p_load(limma, Glimma, edgeR, AnnotationDbi,org.Hs.eg.db, EnsDb.Hsapiens.v86, tidyverse, ggplot2, ... = gridExtra, ggrepel, reshape2, EnhancedVolcano, GGally, sva, pheatmap)
+```
+
+Visualize MDS of the raw data 
+```{r}
+cts  <- read.csv("./Data/DKOs.csv", row.names = 1) # dim is 60663 x 33
+rownames_cts<- row.names(cts)
+study <- read.csv("./Data/meta_DKOs.csv", row.names=1) # dim is 76 x 2
+
+raw <- edgeR::DGEList(counts=cts, samples=study)
+mdf <- limma::plotMDS(cpm(raw, log=T), top=nrow(raw), plot=F, dim.plot = c(1,2), var.explained = TRUE)
+mdf <- data.frame(Comp1=mdf$x, Comp2=mdf$y, 
+                  lab=colnames(raw), 
+                  Tx=raw$samples$Tx)
+p1 <- ggplot(mdf, aes(x=Comp1, y=Comp2, label=lab, col=Tx)) +
+  geom_point() +
+  geom_text_repel() +
+  ggtitle("MDS plot of RAW H1's DKO's") +
+  theme(legend.position="top")+ theme_classic()
+```
+
+
+### Batch normalization
+
+Since the samples were collected in different times, and libraries were made separately, it is important to adjust for batch effect. ComBatSeq ([Zhang et al., 2020. NAR](https://urldefense.com/v3/__https://doi.org/10.1093/nargab/lqaa078__;!!Nmw4Hv0!ycgzUCXcFHGhQEnI2H47axDZcJtl7u1xv3mdW2lj-zw3lXmUe2fAPNVM9_db1ABe3hR1QDHrBz5cdvOgBfnGAV0a7_-IGozu-kLL8GmJ9U2k$ )) was used for that purpose. It uses a negative binomial regression model that retains the integer nature of count data in RNA-seq studies, making the batch adjusted data compatible with common differential expression software packages that require integer counts.
+
+Batch normalized data will be used to plot MDS plots.
+
+```{r}
+sample_names = names(cts)[1:length(names(cts))]
+
+# define conditions, library methods, and replicates
+conditions = c("DKO0_1","DKO0_1","DKO0_1",
+               "DKO0_2","DKO0_2",
+               "DKO0_3","DKO0_3","DKO0_3","DKO0_3","DKO0_3","DKO0_3",
+               "DKO0_4","DKO0_4","DKO0_4","DKO0_4",
+               "DKO0_5","DKO0_5","DKO0_5","DKO0_5","DKO0_5","DKO0_5",
+               "DKO1_4","DKO1_4","DKO1_4","DKO1_4","DKO1_4","DKO1_4",
+               "DKO1_5","DKO1_5","DKO1_5",
+               "DKO2_4","DKO2_4","DKO2_4","DKO2_4","DKO2_4","DKO2_4",
+               "DKO3_4","DKO3_4","DKO3_4","DKO3_4","DKO3_4","DKO3_4",
+               "DKO3_5","DKO3_5","DKO3_5",
+               "DKO4_5","DKO4_5","DKO4_5","DKO4_5",
+               "DKOX_0","DKOX_0","DKOX_0","DKOX_0",
+               "DKOX_2","DKOX_2","DKOX_2","DKOX_2","DKOX_2","DKOX_2",
+               "DKOX_3","DKOX_3","DKOX_3","DKOX_3",
+               "DKOX_4","DKOX_4","DKOX_4","DKOX_4",
+               "DKOX_5","DKOX_5","DKOX_5","DKOX_5","DKOX_5","DKOX_5",
+               "WT","WT","WT")
+library_methods = c("Batch5","Batch6","Batch6",
+                    "Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch5","Batch6","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6",
+                    "Batch5","Batch5","Batch6","Batch6",
+                    "Batch5","Batch6","Batch5","Batch6","Batch5","Batch6",
+                    "Batch6","Batch5","Batch5")
+replicates = c(1, 2, 3, 
+               1, 2,
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3, 4, 
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3, 
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3,  
+               1, 2, 3, 4, 
+               1, 2, 3, 4, 
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3, 4,
+               1, 2, 3, 4, 
+               1, 2, 3, 4, 5, 6,
+               1, 2, 3)
+```
+
+Perform the batch correction
+```{r}
+groups = sapply(as.character(conditions), switch,
+                "DKO0_1" = 1, "DKO0_2" = 2,"DKO0_3" = 3, "DKO0_4" = 4,
+                "DKO0_5" = 5, "DKO1_2" = 6,"DKO1_4" = 7, "DKO1_5" = 8,
+                "DKO2_3" = 9, "DKO2_4" = 10,"DKO2_5" = 11, "DKO3_1" = 12,
+                "DKO3_4" = 13, "DKO3_5" = 14,
+                "DKO4_5" = 15, "DKOX_0" = 16,"DKOX_1" = 17, "DKOX_2" = 18,
+                "DKOX_3" = 19, "DKOX_4" = 20, "DKOX_5" = 21,
+                "WT" = 22)
+batches = sapply(as.character(library_methods), switch, "Batch1" = 1, "Batch2" = 2, "Batch3"=3, "Batch4"=4, "Batch5"=5, "Batch6"=6, "Batch7"=7, "Batch8"=8, "Batch9"=9, "Batch10"=10, "Batch11"=11, USE.NAMES = F)
+corrected_data = ComBat_seq(counts = as.matrix(cts[,sample_names]), batch = batches, group = groups)
+```
+
+```{r}
+batch_norm <- edgeR::DGEList(counts=corrected_data, samples=study)
+
+mdf2 <- limma::plotMDS(cpm(batch_norm, log=T), top=nrow(batch_norm), plot=F, dim.plot = c(1,2), var.explained = TRUE)
+mdf2 <- data.frame(Comp1=mdf2$x, Comp2=mdf2$y, 
+                  lab=colnames(batch_norm), 
+                  Tx=batch_norm$samples$Tx)
+p2 <- ggplot(mdf2, aes(x=Comp1, y=Comp2, label=lab, col=Tx)) +
+  geom_point() +
+  geom_text_repel() +
+  ggtitle("MDS plot of batch normalized H1's DKO's") +
+  theme(legend.position="top")+ theme_classic()
+
+grid.arrange(p1, p2, nrow = 2)
+```
+## Make DGEList
+
+Before making the DGE list it is convinient to have symbol version of the genes in addition to ENSGID.
+
+```{r}
+ensg <- sub("\\..*", "", rownames(cts))  # remove version number in case you have it
+sym <- AnnotationDbi::mapIds(EnsDb.Hsapiens.v86, keys=ensg,
+                             column="SYMBOL", keytype="GENEID") # Unable to map 3533 of 60663 requested IDs.
+gene <- data.frame(ENSGID=ensg, SYMBOL=sym, stringsAsFactors=F)
+rownames(gene) <- rownames(cts)
+```
+
+
+```{r}
+# Check point of the dimensions of datasets
+stopifnot( identical( colnames(cts), rownames(study) ) )
+stopifnot( identical( rownames(cts), rownames(gene) ) )
+
+raw <- edgeR::DGEList(counts=cts, samples=study, genes=gene)
+```
+
+
+```{r}
+# Check for bias in sequencing depth by KO types.
+ggplot(raw$samples, aes(x=Tx, y=lib.size/1000000)) + 
+  geom_boxplot() + geom_point() +
+  xlab("") + ylab("") + ggtitle("Sequencing library size (millions)") 
+```
+
+## Filter
+
+To filter the low expression genes the edgeR's filterByExpr() was used.
+Default min number of reads to keep is 10.
+```{r}
+sum(keep <- edgeR::filterByExpr(raw, group=raw$samples$Tx))  ## 60663 -> 30038 
+```
+
+```{r}
+raw_filtered <- raw[keep, , keep.lib.sizes=FALSE]
+```
+After changing the number of genes from 60663 to 28611, the lib.sizes will be recalculated to be the sum of the counts left in the rows of the experiment for each sample, with keep.lib.sizes = FALSE
+
+Plot the intensities before and after filtering
+```{r}
+tmp <- edgeR::cpm(raw, log=TRUE) %>% melt  ##log2 values returned
+g.before <- ggplot(tmp, aes(value, col=Var2)) + geom_density() + 
+  ggtitle("Before filtering") + theme_bw() + theme(legend.position="none")
+
+tmp <- edgeR::cpm(raw_filtered, log=TRUE) %>% melt
+g.after <- ggplot(tmp, aes(value, col=Var2)) + geom_density() + 
+  ggtitle("After filtering") + theme_bw() + theme(legend.position="none") 
+
+grid.arrange(g.before, g.after, nrow=1)
+
+rm( list=setdiff(ls(), c("raw_filtered", "study")) )
+```
+
+## Normalization
+
+The edgeR function calcNormFactors was used to generate and apply normalization factors. By default, the M-values are weighted according to inverse variances, as computedby the delta method for logarithms of binomial random variables. If refColumn is unspecified, then the library whose upper quartile is closest to the mean upper quartile is used.
+
+```{r}
+# Calculate normalization factors to scale the raw library sizes.
+norm <- edgeR::calcNormFactors(raw_filtered, method="TMM")
+
+nf <- norm$samples$norm.factors # for each sample
+range(nf) # 0.8225219 to 1.1980794
+o <- order(nf)
+
+boxplot( cpm(raw_filtered[ , o], log=T), xaxt="n", main="Before TMM normalization")
+boxplot( cpm(norm[ , o], log=T),         xaxt="n", main="After TMM normalization")
+
+plot( norm$samples$norm.factors[o],  xaxt="n", main="Normalization factor", xlab="" )
+```
+
+# Analysis of RNAseq
+## DEGs
+
+```{r}
+#study_outlier <- read.delim("meta_outlier.txt", row.names=1)
+mm <- model.matrix( ~ 0 + Tx + Batch, data=norm$samples)
+colnames(mm) <- gsub("Tx", "", colnames(mm))
+colnames(mm) <- gsub("BatchBatch", "Batch", colnames(mm))
+head(mm,10)
+
+```
+
+## Limma-voom
+Allows for incredibly flexible model specification (you can include multiple categorical and continuous variables, allowing incorporation of almost any kind of metadata)
+
+Based on simulation studies, maintains the false discovery rate at or below the nominal rate, unlike some other packages
+
+The above specifies a model where each coefficient corresponds to a KO's mean
+
+```{r}
+vm <- limma::voomWithQualityWeights(norm, design=mm, plot=T)
+```
+What is voom doing?
+
+Counts are transformed to log2 counts per million reads (CPM), where “per million reads” is defined based on the normalization factors we calculated earlier
+A linear model is fitted to the log2 CPM for each gene, and the residuals are calculated
+A smoothed curve is fitted to the sqrt(residual standard deviation) by average expression (see red line in plot above)
+The smoothed curve is used to obtain weights for each gene and sample that are passed into limma along with the log2 CPMs.
+More details at https://urldefense.com/v3/__https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29__;!!Nmw4Hv0!ycgzUCXcFHGhQEnI2H47axDZcJtl7u1xv3mdW2lj-zw3lXmUe2fAPNVM9_db1ABe3hR1QDHrBz5cdvOgBfnGAV0a7_-IGozu-kLL8LEHEdV9$ 
+
+
+Another handy feature of limma-voom  is easy to make contrast matrices
+## Contrast matrix
+```{r}
+cm <- limma::makeContrasts(
+  dk0_1vsWT = DKO0_1 - WT_dko,
+  dk0_2vsWT = DKO0_2 - WT_dko,
+  dk0_3vsWT = DKO0_3 - WT_dko,
+  dk0_4vsWT = DKO0_4 - WT_dko,
+  dk0_5vsWT = DKO0_5 - WT_dko,
+
+  dk1_4vsWT = DKO1_4 - WT_dko,
+  dk1_5vsWT = DKO1_5 - WT_dko,
+
+  dk2_4vsWT = DKO2_4 - WT_dko,
+
+  dk3_4vsWT = DKO3_4 - WT_dko,
+  dk3_5vsWT = DKO3_5 - WT_dko,
+
+  dk4_5vsWT = DKO4_5 - WT_dko,
+
+  dkX_0vsWT = DKOX_0 - WT_dko,
+  dkX_2vsWT = DKOX_2 - WT_dko,
+  dkX_3vsWT = DKOX_3 - WT_dko,
+  dkX_4vsWT = DKOX_4 - WT_dko,
+  dkX_5vsWT = DKOX_5 - WT_dko,
+  levels= mm )
+```
+
+## Fitting
+### what is eBayes
+### Empirical Bayes Statistics for Differential Expression
+### Given a microarray linear model fit, compute moderated t-statistics, moderated F-statistic, and log-odds of differential expression by empirical Bayes moderation of the standard errors towards a common value.
+
+Empirical Bayes smoothing of gene-wise standard deviations provides increased power.
+
+
+```{r}
+fit <- limma::lmFit(vm[ , rownames(mm) ], mm) # lmFit fits a linear model using weighted least squares for each gene
+fit <- limma::contrasts.fit(fit, cm) # Estimate contrast for each gene
+fit <- limma::eBayes(fit, trend=TRUE) # Empirical Bayes smoothing of standard errors (shrinks standard errors that are much larger or smaller than those from other genes towards the average standard error) (see https://urldefense.com/v3/__https://www.degruyter.com/doi/10.2202/1544-6115.1027__;!!Nmw4Hv0!ycgzUCXcFHGhQEnI2H47axDZcJtl7u1xv3mdW2lj-zw3lXmUe2fAPNVM9_db1ABe3hR1QDHrBz5cdvOgBfnGAV0a7_-IGozu-kLL8Nt1J23i$ )
+```
+
+## Summary tables for H1 KOs
+
+Identify which genes are significantly differentially expressed for each contrast from a fit object containing p-values and test statistics. 
+```{r}
+summary(limma::decideTests(fit)) # Default p valut is 0.05.
+```
+
+Some studies require more than an adjusted p-value cut-off. For a stricter definition on significance, one may require log-fold-changes (log-FCs) to be above a minimum value.
+
+Here we introduced three significance level to the topTable: sig0, sig1 and sig2.
+sig0's -1 means that the gene is significantly downregulated (see parameters in the code); sig0's +1 meand that the gene is significantly upregulated (see parameters in the code);
+sig1 and sig2 values are even stricter.
+
+## Toptable
+
+```{r}
+# Created three significance levels: sig0, sig1 and sig2. Sig based on FC and FDR.
+
+tt1 <- topTable(fit, coef="dk0_1vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk0_1vsWT_LFC=logFC, dk0_1vsWT_P=P.Value, dk0_1vsWT_FDR=adj.P.Val, dk0_1vsWT_sig0=sig0, dk0_1vsWT_sig1=sig1, dk0_1vsWT_sig2=sig2)
+
+tt2 <- topTable(fit, coef="dk0_2vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk0_2vsWT_LFC=logFC, dk0_2vsWT_P=P.Value, dk0_2vsWT_FDR=adj.P.Val, dk0_2vsWT_sig0=sig0, dk0_2vsWT_sig1=sig1, dk0_2vsWT_sig2=sig2)
+
+tt3 <- topTable(fit, coef="dk0_3vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk0_3vsWT_LFC=logFC, dk0_3vsWT_P=P.Value, dk0_3vsWT_FDR=adj.P.Val, dk0_3vsWT_sig0=sig0, dk0_3vsWT_sig1=sig1, dk0_3vsWT_sig2=sig2)
+
+tt4 <- topTable(fit, coef="dk0_4vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk0_4vsWT_LFC=logFC, dk0_4vsWT_P=P.Value, dk0_4vsWT_FDR=adj.P.Val, dk0_4vsWT_sig0=sig0, dk0_4vsWT_sig1=sig1, dk0_4vsWT_sig2=sig2)
+
+tt5 <- topTable(fit, coef="dk0_5vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk0_5vsWT_LFC=logFC, dk0_5vsWT_P=P.Value, dk0_5vsWT_FDR=adj.P.Val, dk0_5vsWT_sig0=sig0, dk0_5vsWT_sig1=sig1, dk0_5vsWT_sig2=sig2)
+
+
+tt6 <- topTable(fit, coef="dk1_4vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk1_4vsWT_LFC=logFC, dk1_4vsWT_P=P.Value, dk1_4vsWT_FDR=adj.P.Val, dk1_4vsWT_sig0=sig0, dk1_4vsWT_sig1=sig1, dk1_4vsWT_sig2=sig2)
+
+tt7 <- topTable(fit, coef="dk1_5vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk1_5vsWT_LFC=logFC, dk1_5vsWT_P=P.Value, dk1_5vsWT_FDR=adj.P.Val, dk1_5vsWT_sig0=sig0, dk1_5vsWT_sig1=sig1, dk1_5vsWT_sig2=sig2)
+
+
+tt8 <- topTable(fit, coef="dk2_4vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk2_4vsWT_LFC=logFC, dk2_4vsWT_P=P.Value, dk2_4vsWT_FDR=adj.P.Val, dk2_4vsWT_sig0=sig0, dk2_4vsWT_sig1=sig1, dk2_4vsWT_sig2=sig2)
+
+tt9 <- topTable(fit, coef="dk3_4vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk3_4vsWT_LFC=logFC, dk3_4vsWT_P=P.Value, dk3_4vsWT_FDR=adj.P.Val, dk3_4vsWT_sig0=sig0, dk3_4vsWT_sig1=sig1, dk3_4vsWT_sig2=sig2)
+
+tt10 <- topTable(fit, coef="dk3_5vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk3_5vsWT_LFC=logFC, dk3_5vsWT_P=P.Value, dk3_5vsWT_FDR=adj.P.Val, dk3_5vsWT_sig0=sig0, dk3_5vsWT_sig1=sig1, dk3_5vsWT_sig2=sig2)
+
+tt11 <- topTable(fit, coef="dk4_5vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dk4_5vsWT_LFC=logFC, dk4_5vsWT_P=P.Value, dk4_5vsWT_FDR=adj.P.Val, dk4_5vsWT_sig0=sig0, dk4_5vsWT_sig1=sig1, dk4_5vsWT_sig2=sig2)
+
+tt12 <- topTable(fit, coef="dkX_0vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dkX_0vsWT_LFC=logFC, dkX_0vsWT_P=P.Value, dkX_0vsWT_FDR=adj.P.Val, dkX_0vsWT_sig0=sig0, dkX_0vsWT_sig1=sig1, dkX_0vsWT_sig2=sig2)
+
+
+tt13 <- topTable(fit, coef="dkX_2vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dkX_2vsWT_LFC=logFC, dkX_2vsWT_P=P.Value, dkX_2vsWT_FDR=adj.P.Val, dkX_2vsWT_sig0=sig0, dkX_2vsWT_sig1=sig1, dkX_2vsWT_sig2=sig2)
+
+tt14 <- topTable(fit, coef="dkX_3vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dkX_3vsWT_LFC=logFC, dkX_3vsWT_P=P.Value, dkX_3vsWT_FDR=adj.P.Val, dkX_3vsWT_sig0=sig0, dkX_3vsWT_sig1=sig1, dkX_3vsWT_sig2=sig2)
+
+tt15 <- topTable(fit, coef="dkX_4vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dkX_4vsWT_LFC=logFC, dkX_4vsWT_P=P.Value, dkX_4vsWT_FDR=adj.P.Val, dkX_4vsWT_sig0=sig0, dkX_4vsWT_sig1=sig1, dkX_4vsWT_sig2=sig2)
+
+tt16 <- topTable(fit, coef="dkX_5vsWT", adjust.method="fdr", n=Inf) %>% 
+  rownames_to_column("ID") %>% 
+  arrange(P.Value) %>% 
+  mutate(sig0  =sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig1  = sign(logFC)*( abs(logFC) > log2(2) & adj.P.Val < 0.05 ),
+         sig2 = sign(logFC)*( abs(logFC) > log2(4) & adj.P.Val < 0.01 )) %>% 
+  dplyr::select(ID, ENSGID, SYMBOL,  
+                dkX_5vsWT_LFC=logFC, dkX_5vsWT_P=P.Value, dkX_5vsWT_FDR=adj.P.Val, dkX_5vsWT_sig0=sig0, dkX_5vsWT_sig1=sig1, dkX_5vsWT_sig2=sig2)
+
+tt <- BiocGenerics::Reduce(plyr::join, list(tt1, tt2, tt3, tt4, tt5, tt6, tt7,
+                                            tt8, tt9, tt10, tt11, tt12, tt13,
+                                            tt14, tt15, tt16))
+#rm(list=setdiff(ls(), c("norm", "tt", "vm")))
+
+# save tt
+write.csv(tt, file="./Results/topTable_DKOs.csv", quote=F, row.names=F)
+```
+
+
+## Volcano plots
+
+```{r}
+#pdf(file="./Results/volcano_plots_FDR_001.pdf", height=10, width=10)
+
+lfc_tmp <- max( -log10(tt$dk0_1vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk0_1vsWT_LFC", y="dk0_1vsWT_FDR", 
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                selectLab = c("H1-0", "H1-1",	"H1-2",	"H1-3",	"H1-4",	"H1-5",	"H1-10"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk0_1vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk0_2vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk0_2vsWT_LFC", y="dk0_2vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("RP4-686C3.7", "TBX3",	"PRAME",	"FRZB",	"CYP26A1",	"SIX6",	"SHISA2",	"CLEC2A",	"KLK14",	"KLRF2",	"CDKN1A",	"GDF15",	"CER1",	"HIST1H1E"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk0_2vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk0_3vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk0_3vsWT_LFC", y="dk0_3vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk0_3vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk0_4vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk0_4vsWT_LFC", y="dk0_4vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk0_4vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk0_5vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk0_5vsWT_LFC", y="dk0_5vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk0_5vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk1_4vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk1_4vsWT_LFC", y="dk1_4vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk1_4vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk1_5vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk1_5vsWT_LFC", y="dk1_5vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk1_5vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk2_4vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk2_4vsWT_LFC", y="dk2_4vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk2_4vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk3_4vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk3_4vsWT_LFC", y="dk3_4vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk3_4vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk3_5vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk3_5vsWT_LFC", y="dk3_5vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk3_5vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dk4_5vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dk4_5vsWT_LFC", y="dk4_5vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dk4_5vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dkX_0vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dkX_0vsWT_LFC", y="dkX_0vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dkX_0vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dkX_2vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dkX_2vsWT_LFC", y="dkX_2vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dkX_2vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dkX_3vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dkX_3vsWT_LFC", y="dkX_3vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dkX_3vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dkX_4vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dkX_4vsWT_LFC", y="dkX_4vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dkX_4vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+lfc_tmp <- max( -log10(tt$dkX_5vsWT_FDR) )
+EnhancedVolcano(tt, lab=tt$SYMBOL,
+                x="dkX_5vsWT_LFC", y="dkX_5vsWT_FDR",
+                pCutoff=0.05, ylim=c(0, lfc_tmp+2),
+                #selectLab = c("EVI2B",	"CLEC2A",	"KLK14",	"KLRF2",	"CX3CL1",	"C3",	"STX1A",	"SEC31B",	"ALAS2",	"MAPK15",	"H1FX",	"HIST1H1C",	"HIST1H1D",	"HIST1H1E",	"HIST1H1B",	"SIX6",	"MALAT1"),
+                drawConnectors = TRUE,
+                ylab = bquote(~-Log[10] ~ italic( "adjusted p-value")),
+                title="dkX_5vsWT") +
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),         panel.background = element_blank())
+
+dev.off()
+```
+
+## The list of genes that are Up or Down regulated. 
+```{r}
+# Function to write a table
+mywrite <- function(...){
+  write.table(..., row.names=F, col.names=F, quote=F)
+}
+
+tt %>% dplyr::filter(dk0_1vsWT_sig1==1) %>% arrange(dk0_1vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_1vsWT_up.csv")
+tt %>% dplyr::filter(dk0_1vsWT_sig1==-1) %>% arrange(dk0_1vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_1vsWT_down.csv")
+
+tt %>% dplyr::filter(dk0_2vsWT_sig1==1) %>% arrange(dk0_2vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_2vsWT_up.csv")
+tt %>% dplyr::filter(dk0_2vsWT_sig1==-1) %>% arrange(dk0_2vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_2vsWT_down.csv")
+
+tt %>% dplyr::filter(dk0_3vsWT_sig1==1) %>% arrange(dk0_3vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_3vsWT_up.csv")
+tt %>% dplyr::filter(dk0_3vsWT_sig1==-1) %>% arrange(dk0_3vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_3vsWT_down.csv")
+
+tt %>% dplyr::filter(dk0_4vsWT_sig1==1) %>% arrange(dk0_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_4vsWT_up.csv")
+tt %>% dplyr::filter(dk0_4vsWT_sig1==-1) %>% arrange(dk0_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_4vsWT_down.csv")
+
+tt %>% dplyr::filter(dk0_5vsWT_sig1==1) %>% arrange(dk0_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_5vsWT_up.csv")
+tt %>% dplyr::filter(dk0_5vsWT_sig1==-1) %>% arrange(dk0_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk0_5vsWT_down.csv")
+
+tt %>% dplyr::filter(dk1_4vsWT_sig1==1) %>% arrange(dk1_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk1_4vsWT_up.csv")
+tt %>% dplyr::filter(dk1_4vsWT_sig1==-1) %>% arrange(dk1_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk1_4vsWT_down.csv")
+
+tt %>% dplyr::filter(dk1_5vsWT_sig1==1) %>% arrange(dk1_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk1_5vsWT_up.csv")
+tt %>% dplyr::filter(dk1_5vsWT_sig1==-1) %>% arrange(dk1_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk1_5vsWT_down.csv")
+
+tt %>% dplyr::filter(dk2_4vsWT_sig1==1) %>% arrange(dk2_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk2_4vsWT_up.csv")
+tt %>% dplyr::filter(dk2_4vsWT_sig1==-1) %>% arrange(dk2_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk2_4vsWT_down.csv")
+
+tt %>% dplyr::filter(dk3_4vsWT_sig1==1) %>% arrange(dk3_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk3_4vsWT_up.csv")
+tt %>% dplyr::filter(dk3_4vsWT_sig1==-1) %>% arrange(dk3_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk3_4vsWT_down.csv")
+
+tt %>% dplyr::filter(dk3_5vsWT_sig1==1) %>% arrange(dk3_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk3_5vsWT_up.csv")
+tt %>% dplyr::filter(dk3_5vsWT_sig1==-1) %>% arrange(dk3_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk3_5vsWT_down.csv")
+
+tt %>% dplyr::filter(dk4_5vsWT_sig1==1) %>% arrange(dk4_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk4_5vsWT_up.csv")
+tt %>% dplyr::filter(dk4_5vsWT_sig1==-1) %>% arrange(dk4_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dk4_5vsWT_down.csv")
+
+tt %>% dplyr::filter(dkX_0vsWT_sig1==1) %>% arrange(dkX_0vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_0vsWT_up.csv")
+tt %>% dplyr::filter(dkX_0vsWT_sig1==-1) %>% arrange(dkX_0vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_0vsWT_down.csv")
+
+tt %>% dplyr::filter(dkX_2vsWT_sig1==1) %>% arrange(dkX_2vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_2vsWT_up.csv")
+tt %>% dplyr::filter(dkX_2vsWT_sig1==-1) %>% arrange(dkX_2vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_2vsWT_down.csv")
+
+tt %>% dplyr::filter(dkX_3vsWT_sig1==1) %>% arrange(dkX_3vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_3vsWT_up.csv")
+tt %>% dplyr::filter(dkX_3vsWT_sig1==-1) %>% arrange(dkX_3vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_3vsWT_down.csv")
+
+tt %>% dplyr::filter(dkX_4vsWT_sig1==1) %>% arrange(dkX_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_4vsWT_up.csv")
+tt %>% dplyr::filter(dkX_4vsWT_sig1==-1) %>% arrange(dkX_4vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_4vsWT_down.csv")
+
+tt %>% dplyr::filter(dkX_5vsWT_sig1==1) %>% arrange(dkX_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_5vsWT_up.csv")
+tt %>% dplyr::filter(dkX_5vsWT_sig1==-1) %>% arrange(dkX_5vsWT_LFC) %>% 
+  pull(ID) %>% mywrite(file="./Results/siglist_dkX_5vsWT_down.csv")
+```
+
+
+## The union of DEGs between all the samples. 
+```{r}
+#get the names of DEGs with FDR<0.05 and FC 1.5
+dk0_1vsWT_sig0_up <- tt %>% dplyr::filter(dk0_1vsWT_sig0==1) %>% arrange(dk0_1vsWT_LFC) %>% pull(ENSGID) 
+dk0_1vsWT_sig0_down <- tt %>% dplyr::filter(dk0_1vsWT_sig0==-1) %>% arrange(dk0_1vsWT_LFC) %>% pull(ENSGID)
+
+dk0_2vsWT_sig0_up <- tt %>% dplyr::filter(dk0_2vsWT_sig0==1) %>% arrange(dk0_2vsWT_LFC) %>% pull(ENSGID)
+dk0_2vsWT_sig0_down <- tt %>% dplyr::filter(dk0_2vsWT_sig0==-1) %>% arrange(dk0_2vsWT_LFC) %>% pull(ENSGID)
+
+dk0_3vsWT_sig0_up <- tt %>% dplyr::filter(dk0_3vsWT_sig0==1) %>% arrange(dk0_3vsWT_LFC) %>% pull(ENSGID)
+dk0_3vsWT_sig0_down <- tt %>% dplyr::filter(dk0_3vsWT_sig0==-1) %>% arrange(dk0_3vsWT_LFC) %>% pull(ENSGID)
+
+dk0_4vsWT_sig0_up <- tt %>% dplyr::filter(dk0_4vsWT_sig0==1) %>% arrange(dk0_4vsWT_LFC) %>% pull(ENSGID)
+dk0_4vsWT_sig0_down <- tt %>% dplyr::filter(dk0_4vsWT_sig0==-1) %>% arrange(dk0_4vsWT_LFC) %>% pull(ENSGID)
+
+dk0_5vsWT_sig0_up <- tt %>% dplyr::filter(dk0_5vsWT_sig0==1) %>% arrange(dk0_5vsWT_LFC) %>% pull(ENSGID)
+dk0_5vsWT_sig0_down <- tt %>% dplyr::filter(dk0_5vsWT_sig0==-1) %>% arrange(dk0_5vsWT_LFC) %>% pull(ENSGID)
+
+dk1_4vsWT_sig0_up <- tt %>% dplyr::filter(dk1_4vsWT_sig0==1) %>% arrange(dk1_4vsWT_LFC) %>% pull(ENSGID)
+dk1_4vsWT_sig0_down <- tt %>% dplyr::filter(dk1_4vsWT_sig0==-1) %>% arrange(dk1_4vsWT_LFC) %>% pull(ENSGID)
+
+dk1_5vsWT_sig0_up <- tt %>% dplyr::filter(dk1_5vsWT_sig0==1) %>% arrange(dk1_5vsWT_LFC) %>% pull(ENSGID)
+dk1_5vsWT_sig0_down <- tt %>% dplyr::filter(dk1_5vsWT_sig0==-1) %>% arrange(dk1_5vsWT_LFC) %>% pull(ENSGID)
+
+dk2_4vsWT_sig0_up <- tt %>% dplyr::filter(dk2_4vsWT_sig0==1) %>% arrange(dk2_4vsWT_LFC) %>% pull(ENSGID)
+dk2_4vsWT_sig0_down <- tt %>% dplyr::filter(dk2_4vsWT_sig0==-1) %>% arrange(dk2_4vsWT_LFC) %>% pull(ENSGID)
+
+dk3_4vsWT_sig0_up <- tt %>% dplyr::filter(dk3_4vsWT_sig0==1) %>% arrange(dk3_4vsWT_LFC) %>% pull(ENSGID)
+dk3_4vsWT_sig0_down <- tt %>% dplyr::filter(dk3_4vsWT_sig0==-1) %>% arrange(dk3_4vsWT_LFC) %>% pull(ENSGID)
+
+dk3_5vsWT_sig0_up <- tt %>% dplyr::filter(dk3_5vsWT_sig0==1) %>% arrange(dk3_5vsWT_LFC) %>% pull(ENSGID)
+dk3_5vsWT_sig0_down <- tt %>% dplyr::filter(dk3_5vsWT_sig0==-1) %>% arrange(dk3_5vsWT_LFC) %>% pull(ENSGID)
+
+dk4_5vsWT_sig0_up <- tt %>% dplyr::filter(dk4_5vsWT_sig0==1) %>% arrange(dk4_5vsWT_LFC) %>% pull(ENSGID)
+dk4_5vsWT_sig0_down <- tt %>% dplyr::filter(dk4_5vsWT_sig0==-1) %>% arrange(dk4_5vsWT_LFC) %>% pull(ENSGID)
+
+dkX_0vsWT_sig0_up <- tt %>% dplyr::filter(dkX_0vsWT_sig0==1) %>% arrange(dkX_0vsWT_LFC) %>% pull(ENSGID)
+dkX_0vsWT_sig0_down <- tt %>% dplyr::filter(dkX_0vsWT_sig0==-1) %>% arrange(dkX_0vsWT_LFC) %>% pull(ENSGID)
+
+dkX_2vsWT_sig0_up <- tt %>% dplyr::filter(dkX_2vsWT_sig0==1) %>% arrange(dkX_2vsWT_LFC) %>% pull(ENSGID)
+dkX_2vsWT_sig0_down <- tt %>% dplyr::filter(dkX_2vsWT_sig0==-1) %>% arrange(dkX_2vsWT_LFC) %>% pull(ENSGID)
+
+dkX_3vsWT_sig0_up <- tt %>% dplyr::filter(dkX_3vsWT_sig0==1) %>% arrange(dkX_3vsWT_LFC) %>% pull(ENSGID)
+dkX_3vsWT_sig0_down <- tt %>% dplyr::filter(dkX_3vsWT_sig0==-1) %>% arrange(dkX_3vsWT_LFC) %>% pull(ENSGID)
+
+dkX_4vsWT_sig0_up <- tt %>% dplyr::filter(dkX_4vsWT_sig0==1) %>% arrange(dkX_4vsWT_LFC) %>% pull(ENSGID)
+dkX_4vsWT_sig0_down <- tt %>% dplyr::filter(dkX_4vsWT_sig0==-1) %>% arrange(dkX_4vsWT_LFC) %>% pull(ENSGID)
+
+dkX_5vsWT_sig0_up <- tt %>% dplyr::filter(dkX_5vsWT_sig0==1) %>% arrange(dkX_5vsWT_LFC) %>% pull(ENSGID)
+dkX_5vsWT_sig0_down <- tt %>% dplyr::filter(dkX_5vsWT_sig0==-1) %>% arrange(dkX_5vsWT_LFC) %>% pull(ENSGID)
+
+# Find the union of all the genes in the table
+union_of_genes <- BiocGenerics::Reduce(union, list(dk0_1vsWT_sig0_up, dk0_1vsWT_sig0_down, dk0_2vsWT_sig0_up, dk0_2vsWT_sig0_down, dk0_3vsWT_sig0_up, dk0_3vsWT_sig0_down, dk0_4vsWT_sig0_up, dk0_4vsWT_sig0_down, dk0_5vsWT_sig0_up, dk0_5vsWT_sig0_down, dk1_4vsWT_sig0_up, dk1_4vsWT_sig0_down, dk1_5vsWT_sig0_up, dk1_5vsWT_sig0_down, dk2_4vsWT_sig0_up, dk2_4vsWT_sig0_down, dk3_4vsWT_sig0_up, dk3_4vsWT_sig0_down, dk3_5vsWT_sig0_up, dk3_5vsWT_sig0_down, dk4_5vsWT_sig0_up, dk4_5vsWT_sig0_down, dkX_0vsWT_sig0_up, dkX_0vsWT_sig0_down, dkX_2vsWT_sig0_up, dkX_2vsWT_sig0_down, dkX_3vsWT_sig0_up, dkX_3vsWT_sig0_down, dkX_4vsWT_sig0_up, dkX_4vsWT_sig0_down, dkX_5vsWT_sig0_up, dkX_5vsWT_sig0_down)) # find the union from all conditions
+
+union_topTable <- dplyr::filter(tt, ID %in% union_of_genes) # gives you toptable with union
+dim(union_topTable) # 16578 x 99
+
+write.csv(union_topTable, file="./Results/union_topTable_DKOs.csv", quote=F, row.names=F)
+```
+
+
