@@ -49,41 +49,41 @@ The repository is divided into 2 Rmd file and 4 R scripts. Each pipeline serves 
 
    To successfully run the pipelines, the following packages must be installed:
 
-    - tidyverse
-    - limma
-    - Glimma
-    - edgeR
-    - AnnotationDbi
-    - org.Hs.eg.db
-    - EnsDb.Hsapiens.v86
-    - ggplot2
-    - gridExtra
-    - ggrepel
-    - reshape2
-    - EnhancedVolcano
-    - GGally
-    - sva
-    - pheatmap
-    - ssizeRNA
-    - clusterProfiler
-    - enrichplot
-    - pacman
-    - RColorBrewer
-    - ggpubr
-    - qvalue
-    - plyr
-    - dplyr
-    - wesanderson
-    - GSEABase
-    - grid
-    - scales
-    - WebGestaltR
-    - stringr
-    - ggalluvial
-    - corrplot
-    - reshape2
-    - stats
-    - BioGenerics
+  - tidyverse
+  - limma
+  - Glimma
+  - edgeR
+  - AnnotationDbi
+  - org.Hs.eg.db
+  - EnsDb.Hsapiens.v86
+  - ggplot2
+  - gridExtra
+  - ggrepel
+  - reshape2
+  - EnhancedVolcano
+  - GGally
+  - sva
+  - pheatmap
+  - ssizeRNA
+  - clusterProfiler
+  - enrichplot
+  - pacman
+  - RColorBrewer
+  - ggpubr
+  - qvalue
+  - plyr
+  - dplyr
+  - wesanderson
+  - GSEABase
+  - grid
+  - scales
+  - WebGestaltR
+  - stringr
+  - ggalluvial
+  - corrplot
+  - reshape2
+  - stats
+  - BioGenerics
    
 
 
