@@ -22,6 +22,7 @@
 
 ## based on ssizeRNA package
 library(ssizeRNA)
+library(edgeR)
 
 # check.power(m = 14, mu = 10, disp = 0.1, fc = 2, sims = 10)
 cts  <- read.csv("./Data/SKOs.csv", row.names = 1) # 60663
