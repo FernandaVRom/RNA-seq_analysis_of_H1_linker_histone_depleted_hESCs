@@ -47,7 +47,7 @@ The repository is divided into 2 Rmd file and 4 R scripts. Each pipeline serves 
 
 ### REQUIRED PACKAGES
 
-   To successfully run the pipelines, the following packages must be installed:
+   To successfully run the pipelines, the following packages must be loaded:
 
   - tidyverse
   - limma
