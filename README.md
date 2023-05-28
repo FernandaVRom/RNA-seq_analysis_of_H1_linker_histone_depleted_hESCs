@@ -45,7 +45,46 @@ The repository is divided into 2 Rmd file and 4 R scripts. Each pipeline serves 
    The resulting genes are categorized based on their potential synergistic behavior, including various scenarios of upregulation and downregulation. Genes with non-significant synergistic LFC are categorized as "SAME" or "undefined," depending on their effect size relative to the average standard errors computed across all LFCs.
    
 
+### REQUIRED PACKAGES
 
+   To successfully run the pipelines, the following packages must be installed:
+
+    - tidyverse
+    - limma
+    - Glimma
+    - edgeR
+    - AnnotationDbi
+    - org.Hs.eg.db
+    - EnsDb.Hsapiens.v86
+    - ggplot2
+    - gridExtra
+    - ggrepel
+    - reshape2
+    - EnhancedVolcano
+    - GGally
+    - sva
+    - pheatmap
+    - ssizeRNA
+    - clusterProfiler
+    - enrichplot
+    - pacman
+    - RColorBrewer
+    - ggpubr
+    - qvalue
+    - plyr
+    - dplyr
+    - wesanderson
+    - GSEABase
+    - grid
+    - scales
+    - WebGestaltR
+    - stringr
+    - ggalluvial
+    - corrplot
+    - reshape2
+    - stats
+    - BioGenerics
+   
 
 
 ## ABOUT THE DATA
