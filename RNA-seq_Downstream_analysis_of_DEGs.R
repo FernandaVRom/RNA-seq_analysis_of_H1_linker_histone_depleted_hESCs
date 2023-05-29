@@ -237,7 +237,7 @@ Dotp_down <- dotplot(downregulated_GO_results,
         label_format = 30,
         )
 
-.# Save the files in pdf
+# Save the files in pdf
 ggsave(filename = "./Results/GO_result_upregulated.pdf", plot = Dotp_up, width = 10, height = 7)
 ggsave(filename = "./Results/GO_result_downregulated.pdf", plot = Dotp_down, width = 10, height = 7)
 
