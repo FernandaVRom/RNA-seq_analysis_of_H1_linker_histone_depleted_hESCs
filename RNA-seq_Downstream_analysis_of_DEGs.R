@@ -41,6 +41,8 @@ library(stats)
 
 ### Generate heatmap----------------------------------------------------------------------------------------------------------------
 
+# OPTION 1: To visualized the z-score of LFC
+
 heatm <- pheatmap(list1, 
                   scale = "row", 
                   cluster_rows = TRUE,
@@ -48,6 +50,19 @@ heatm <- pheatmap(list1,
                   cluster_cols = TRUE,  
                   cutree_cols=3, 
                   cutree_rows=5,
+                  show_rownames = FALSE
+                  )
+
+# OPTION 2: To visualized only the LFC
+
+heatm <- pheatmap(list1, 
+                  scale = "none", 
+                  cluster_rows = TRUE,
+                  color=colorRampPalette(c("blue", "white", "red"))(100),
+                  breaks = seq(-5, 5, length.out = 100),
+                  cluster_cols = TRUE,  
+                  cutree_cols=3, 
+                  cutree_rows= 1,
                   show_rownames = FALSE
                   )
 
